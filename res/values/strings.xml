@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">MyWord</string>
+    <string name="install_status"/>
+    <string name="action_settings">Settings</string>
+    <string name="checkBt">Check</string>
+    <string name="enter_word_for_search">Enter word for search</string>
+    <string name="no_such_word_in_db">No such word in the dictionary</string>
+    <string name="title_activity_activity_search_setting">ActivitySearchSetting</string>
+    <string name="title_activity_activity_main_tabbed">ActivityMainTabbed</string>
+    <string name="search">SEARCH</string>
+    <string name="settings">SETTINGS</string>
+    <string name="add_dictionary">Add Dictionary</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="dict_name">Dictionary name</string>
+    <string name="dictionaries_upper">DICTIONARIES</string>
+    <string name="style_upper">STYLE</string>
+    <string name="word_text"></string>
+    <string name="value_text">Value text</string>
+
+</resources>
