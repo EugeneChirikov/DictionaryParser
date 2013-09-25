@@ -71,7 +71,7 @@ public class RawStarDictDictionary implements  RawDictionary
 		this.dictFile = dictFile;
 	}
 
-	public void parseAndCopyIntoDB(DictionaryManager dm)
+	public void parseAndCopyIntoDB(DataSource ds)
 	{
 		try
 		{
@@ -81,12 +81,13 @@ public class RawStarDictDictionary implements  RawDictionary
 			setWordsOffsetSize();
 			StarDictWord newWord = new StarDictWord(idxoffsetbits);			
 			initStreamsReaderBuffered(idxFile);
+			ds.open();
 			while (true)
 			{
 				obtainWordFromIDX(newWord);
 				Log.d("STARD_PARSER", newWord.getSource());
 //				obtainValuesFromDICT(newWord);
-//				dm.addWord(newWord.getSource(), newWord.getValues(), name);
+				ds.insertWord(newWord.getSource(), "some-value");
 			}
 //			checkParsedIDX();
 		}
@@ -100,6 +101,8 @@ public class RawStarDictDictionary implements  RawDictionary
 		}
 		finally
 		{
+			Log.d("STARD_PARSER", "Closing database");
+			ds.close();
 			Log.d("STARD_PARSER", "Closing all streams");
 			try {
 				ifoFile.close();

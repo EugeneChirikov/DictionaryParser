@@ -33,7 +33,9 @@ public class WordBuffer
 	public String getWord() throws CharacterCodingException
 	{
 		ByteBuffer wrappedBuffer = ByteBuffer.wrap(wordString, 0, length);
-		return byteBufferToString(wrappedBuffer);
+		String word = byteBufferToString(wrappedBuffer);
+		wrappedBuffer = null;
+		return word;
 	}
 	
 	private String byteBufferToString(ByteBuffer byteBuffer) throws CharacterCodingException

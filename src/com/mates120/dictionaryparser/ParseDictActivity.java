@@ -17,6 +17,7 @@ import android.widget.TextView;
 
 public class ParseDictActivity extends Activity
 {
+	private final String DICT_NAME = "dict0";
 	private final String FILES_PATH = "/storage/sdcard0/mates120"; 
     private ProgressBar installationProgress;
     private Handler uiThreadHandler = new Handler();
@@ -53,8 +54,8 @@ public class ParseDictActivity extends Activity
         		upgradeProgressBarWith(33);
         		
         		upgradeStatusWith("Extracting and copying dictionary data...");
-        		DictionaryManager dm = new DictionaryManager(getBaseContext());
-        		rawDictionary.parseAndCopyIntoDB(dm);
+        		DataSource ds = new DataSource(getBaseContext(), DICT_NAME);
+        		rawDictionary.parseAndCopyIntoDB(ds);
         		upgradeProgressBarWith(66);
         		
         		upgradeStatusWith("Indexing dictionary data...");
@@ -103,11 +104,11 @@ public class ParseDictActivity extends Activity
 		{
 			try
 			{
-				InputStream ifoFile = obtainFileFromFsystem("dict0.ifo");
+				InputStream ifoFile = obtainFileFromFsystem(DICT_NAME + ".ifo");
 //				readFileStream2(ifoFile);
-				InputStream idxFile = obtainFileFromProvider("dict0.idx");
+				InputStream idxFile = obtainFileFromFsystem(DICT_NAME + ".idx");
 //				readFileStream2(idxFile);
-				InputStream dictFile = obtainFileFromProvider("dict0.dict");
+				InputStream dictFile = obtainFileFromFsystem(DICT_NAME + ".dict");
 //				readFileStream2(dictFile);
 				rawDict = new RawStarDictDictionary(ifoFile, idxFile, dictFile);
 			}
