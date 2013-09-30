@@ -87,7 +87,7 @@ public class RawStarDictDictionary implements  RawDictionary
 				obtainWordFromIDX(newWord);
 				Log.d("STARD_PARSER", newWord.getSource());
 //				obtainValuesFromDICT(newWord);
-				ds.insertWord(newWord.getSource(), "some-value");
+				ds.insertWord(newWord.getSource(), "this-is-very-long-value,almost an article");
 			}
 //			checkParsedIDX();
 		}
