@@ -5,7 +5,10 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 import android.app.IntentService;
+import android.content.Context;
 import android.content.Intent;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
 import android.util.Log;
 
 public class DoTheJobService extends IntentService
@@ -19,12 +22,23 @@ public class DoTheJobService extends IntentService
 	}
 
 	@Override
-	protected void onHandleIntent(Intent arg0) {
+	protected void onHandleIntent(Intent arg0)
+	{
 		String dictType = "StarDict"; // assume this we can get with Intent
 		Log.d("STARD_PARSER", "Service is started woo hoo!");
-		RawDictionary rawDictionary = obtainDictionaryFiles(dictType);
-		DataSource ds = new DataSource(getBaseContext(), DICT_NAME);
-		rawDictionary.parseAndCopyIntoDB(ds);
+		PowerManager mgr = (PowerManager)getBaseContext().getSystemService(Context.POWER_SERVICE);
+		WakeLock wakeLock = mgr.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "DictParserWakeLock");
+		wakeLock.acquire();
+		try
+		{
+			RawDictionary rawDictionary = obtainDictionaryFiles(dictType);
+			DataSource ds = new DataSource(getBaseContext(), DICT_NAME);
+			rawDictionary.parseAndCopyIntoDB(ds);
+		}
+		finally
+		{
+			wakeLock.release();
+		}
 	}
 
 	private RawDictionary obtainDictionaryFiles(String dictType)
