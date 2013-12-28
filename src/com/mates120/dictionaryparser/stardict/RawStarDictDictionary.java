@@ -1,16 +1,19 @@
-package com.mates120.dictionaryparser;
+package com.mates120.dictionaryparser.stardict;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import android.util.Log;
 
+import com.mates120.dictionaryparser.RawDictionary;
+import com.mates120.dictionaryparser.StarDictWord;
+import com.mates120.dictionaryparser.Storage;
+import com.mates120.dictionaryparser.WordBuffer;
 import com.mates120.dictionaryparser.Exceptions.DictionaryParserException;
 import com.mates120.dictionaryparser.Exceptions.EndOfFileException;
+import com.mates120.dictionaryparser.debug.Logger;
 
 public class RawStarDictDictionary implements  RawDictionary
 {
@@ -44,10 +47,9 @@ public class RawStarDictDictionary implements  RawDictionary
 	}
 
 	private String name;
-	private InputStream ifoFile;
-	private InputStream idxFile;
-	private InputStream dictFile;
-	private StreamsReader inputStream;
+	private IfoFile ifoFile;
+	private IdxFile idxFile;
+	private DictFile dictFile;
 
 	private int wordcount = -1;
 	private int synwordcount = -1;
@@ -64,36 +66,36 @@ public class RawStarDictDictionary implements  RawDictionary
 	
 	WordBuffer wordString = new WordBuffer();
 
-	public RawStarDictDictionary(InputStream ifoFile, InputStream idxFile, InputStream dictFile)
+	public RawStarDictDictionary(IfoFile ifoFile, IdxFile idxFile, DictFile dictFile)
 	{
 		this.ifoFile = ifoFile;
 		this.idxFile = idxFile;
 		this.dictFile = dictFile;
 	}
 
-	public void parseAndCopyIntoDB(DataSource ds)
+	public void parseAndCopyIntoDB(Storage storage)
 	{
 		try
 		{
 			parseIFO();
-			checkParsedIFO();
-//			TimeUnit.SECONDS.sleep(10);
+//			checkParsedIFO();
 			setWordsOffsetSize();
-			StarDictWord newWord = new StarDictWord(idxoffsetbits);			
-			initStreamsReaderBuffered(idxFile);
-			ds.open();
+			StarDictWord newWord = new StarDictWord(idxoffsetbits);
+			storage.open();
 			while (true)
 			{
 				obtainWordFromIDX(newWord);
-				Log.d("STARD_PARSER", newWord.getSource());
-//				obtainValuesFromDICT(newWord);
-				ds.insertWord(newWord.getSource(), "this-is-very-long-value,almost an article");
+				Logger.l().PRINT("STARD_PARSER", newWord.getSource());
+				newWord.setSource(escapeQuotes(newWord.getSource()));
+				obtainValueFromDICT(newWord);
+				Logger.l().PRINT("STARD_PARSER", newWord.getValue());
+				storage.insertWord(newWord.getSource(), newWord.getValue());
 			}
 //			checkParsedIDX();
 		}
 		catch (EndOfFileException e)
 		{
-			Log.d("STARD_PARSER", "End of file reached");
+			Logger.l().PRINT("STARD_PARSER", "End of file reached");
 		}
 		catch (Exception e)
 		{
@@ -101,41 +103,55 @@ public class RawStarDictDictionary implements  RawDictionary
 		}
 		finally
 		{
-			Log.d("STARD_PARSER", "Closing database");
-			ds.close();
-			Log.d("STARD_PARSER", "Closing all streams");
+			Logger.l().PRINT("STARD_PARSER", "Closing database");
+			storage.close();
+			Logger.l().PRINT("STARD_PARSER", "Closing all streams");
 			try {
 				ifoFile.close();
 				idxFile.close();
 				dictFile.close();
 			} catch (IOException e) {
-				Log.d("STARD_PARSER", "Failed to close streams");
+				Logger.l().PRINT("STARD_PARSER", "Failed to close streams");
 			}
-						
+
 //			checkParsedIDX();
 		}
-
+	}
+	
+	private String escapeQuotes(String str)
+	{
+		StringBuilder sb = new StringBuilder(str);
+		char ch;
+		for (int i = 0; i < sb.length(); ++i)
+		{
+			ch = sb.charAt(i);
+			if (ch == '\'')
+			{
+				sb.insert(i, '\'');
+				++i;
+			}
+		}
+		return sb.toString();
 	}
 
 	private void checkParsedIFO()
 	{
-		System.out.println("bookname = " + name);
-		System.out.println("wordcount = " + Integer.toString(wordcount));
-		System.out.println("synwordcount = " + Integer.toString(synwordcount));
-		System.out.println("idxoffsetbits = " + Integer.toString(idxoffsetbits));
-		System.out.println("idxfilesize = " + Integer.toString(idxfilesize));
-		System.out.println("author = " + author);
-		System.out.println("email = " + email);
-		System.out.println("website = " + website);
-		System.out.println("description = " + description);
-		System.out.println("date = " + date);
-		System.out.println("sametypesequence = " + sametypesequence);
+		Logger.l().PRINT("bookname = " + name);
+		Logger.l().PRINT("wordcount = " + Integer.toString(wordcount));
+		Logger.l().PRINT("synwordcount = " + Integer.toString(synwordcount));
+		Logger.l().PRINT("idxoffsetbits = " + Integer.toString(idxoffsetbits));
+		Logger.l().PRINT("idxfilesize = " + Integer.toString(idxfilesize));
+		Logger.l().PRINT("author = " + author);
+		Logger.l().PRINT("email = " + email);
+		Logger.l().PRINT("website = " + website);
+		Logger.l().PRINT("description = " + description);
+		Logger.l().PRINT("date = " + date);
+		Logger.l().PRINT("sametypesequence = " + sametypesequence);
 	}
 	
 	private void parseIFO() throws IOException, DictionaryParserException
 	{
-		initStreamsReader(ifoFile);
-		String ifoData = readEverythingString();
+		String ifoData = ifoFile.readEverythingString();
 
 		Pattern regexpPattern = Pattern.compile("([a-z]+)=([0-9.]+|(?<=bookname=|description=|sametypesequence=).+)");
 		Matcher regexpMatcher = regexpPattern.matcher(ifoData);
@@ -191,22 +207,6 @@ public class RawStarDictDictionary implements  RawDictionary
 		}		
 	}
 
-	private void initStreamsReader(InputStream myStream)
-	{
-		inputStream = new StreamsReader(myStream);
-	}
-	
-	private void initStreamsReaderBuffered(InputStream myStream)
-	{
-		initStreamsReader(myStream);
-		inputStream.initBufferedReading();
-	}
-	
-	private String readEverythingString() throws IOException
-	{
-		return inputStream.readEverythingString();
-	}
-	
 	private IFO_PARAMETERS identifyIFOParam(String paramName)
 	{
 		for (IFO_PARAMETERS p : IFO_PARAMETERS.values())
@@ -224,28 +224,40 @@ public class RawStarDictDictionary implements  RawDictionary
 
 		byte newByte;
 		wordString.clear();
-		newByte = readByte();
+		newByte = idxFile.getByte();
 		while (newByte != WORD_ENDING)
 		{
 			wordString.addByte(newByte);
-			newByte = readByte();
+			newByte = idxFile.getByte();
 		}
 		newWord.setSource(wordString.getWord());
 		readBytesIntoBuffer(newWord.getDataOffset());
-		readBytesIntoBuffer(newWord.getDataSize());	
+		readBytesIntoBuffer(newWord.getDataSize());
 	}
 	
-	private byte readByte() throws EndOfFileException, IOException
+	private void obtainValueFromDICT(StarDictWord newWord) throws DictionaryParserException, IOException
 	{
-		return inputStream.getByte();
+		if (sametypesequence.isEmpty())
+			throw new DictionaryParserException("sametypesequence is empty");
+		if (sametypesequence.equals("x"))
+		{
+//			Logger.l().PRINT("STARD_PARSER", "type is X");
+			String avalue = dictFile.readValue(newWord.getDataOffset(), newWord.getDataSize());
+			newWord.addValue(avalue);
+		}
 	}
-
+	
+	private void convertXdxf2Html()
+	{
+		
+	}
+	
 	private void readBytesIntoBuffer(byte [] buffer) throws EndOfFileException, IOException
 	{
 		byte newByte;
 		for (int i = 0; i < buffer.length; ++i)
 		{
-			newByte = readByte();
+			newByte = idxFile.getByte();
 			buffer[i] = newByte;
 		}
 	}
@@ -260,12 +272,4 @@ public class RawStarDictDictionary implements  RawDictionary
 			idxoffsetbits = 32;
 	}
 	
-	private void checkParsedIDX()
-	{
-		
-	}
-	
-	private void parseDICT() throws DictionaryParserException, IOException{
-		dictFile.close();
-	}
 }

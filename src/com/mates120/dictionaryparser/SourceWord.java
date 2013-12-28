@@ -1,28 +1,15 @@
 package com.mates120.dictionaryparser;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class SourceWord {
 	private String source;
-	private List<String> values;
-	
-	SourceWord()
-	{		
-		this.values = new ArrayList<String>();
-	}
-	
-	SourceWord(String source, List<String> values){
-		this.source = source;
-		this.values = values;
-	}
+	private String value;
 	
 	public String getSource(){
 		return source;
 	}
 	
-	public List<String> getValues(){
-		return values;
+	public String getValue(){
+		return value;
 	}
 	
 	public void setSource(String source)
@@ -30,13 +17,8 @@ public class SourceWord {
 		this.source = source;
 	}
 	
-	public void clearValues()
-	{
-		this.values.clear();
-	}
-	
 	public void addValue(String value)
 	{
-		this.values.add(value);
+		this.value = value;
 	}
 }
