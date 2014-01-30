@@ -4,8 +4,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import android.util.Log;
-
 import com.mates120.dictionaryparser.Exceptions.DictionaryParserException;
 import com.mates120.dictionaryparser.debug.Logger;
 
@@ -21,6 +19,7 @@ public class DictFile extends StarDictFile
 
 	public String readValue(byte[] offset, byte[] size) throws IOException, DictionaryParserException
 	{
+		String newValue = "";
 //		Logger.l().PRINT("STARD_PARSER", "offset was = ");
 //		debuggingPrint(offset);
 		long offsetValue = makeFittingOffset(offset);
@@ -30,13 +29,17 @@ public class DictFile extends StarDictFile
 		
 //		Logger.l().PRINT("STARD_PARSER", "size was = ");
 //		debuggingPrint(size);
-		int sizeValue = makeFittingSize(size);
+		int[] sizeValue = makeFittingSize(size);
 //		Logger.l().PRINT("STARD_PARSER", "size is = " + sizeValue);
-		
-		byte [] buffer = createBuffer(sizeValue);
-		randomAccessStream.read(buffer);
-	    String newValue = convertToString(buffer);
-	    buffer = null;
+		if (sizeValue.length == 1)
+		{		
+			byte [] buffer = createBuffer(sizeValue[0]);
+			randomAccessStream.read(buffer);
+			newValue = convertToString(buffer);
+			buffer = null;
+		}
+		else
+			throw new DictionaryParserException("Too long article");
 	    return newValue;
 	}
 	
@@ -67,18 +70,36 @@ public class DictFile extends StarDictFile
 		return offsetValue;
 	}
 	
-	private int makeFittingSize(byte[] size) throws DictionaryParserException
+	private int[] makeFittingSize(byte[] size) throws DictionaryParserException
 	{
-		int sizeValue = 0;
-		if (size.length != 4)
-			throw new DictionaryParserException("We support only 2 byte long size of article");
-		for (int i = 0; i < 2; ++i)
+		requireSize(size);
+		long sizeValue = 0;		
+		for (int i = 0; i < 4; ++i)
 		{
-			if ((size[i] & 0xFF) != 0)
-				throw new DictionaryParserException("We support only 2 byte long size of article");
 			sizeValue <<= 8;
-			sizeValue |= (size[i+2] & 0xFF);
+			sizeValue |= (size[i] & 0xFF);
 		}
-		return sizeValue;
+		int[] sizes;
+		if (sizeValue <= Integer.MAX_VALUE) // size is just int
+		{
+			sizes = new int[1];
+			sizes[0] = (int)sizeValue;
+			return sizes;
+		}
+		int maxIntsCount = (int)(sizeValue / (long)Integer.MAX_VALUE);
+		long base = maxIntsCount * Integer.MAX_VALUE;
+		int rest = (int)(sizeValue - base);
+		if (rest < 0)
+			throw new DictionaryParserException("It can never happen");
+		sizes = new int[2];
+		sizes[0] = maxIntsCount;
+		sizes[1] = rest;
+		return sizes;
+	}
+	
+	private void requireSize(byte[] size) throws DictionaryParserException
+	{
+		if (size.length != 4)
+			throw new DictionaryParserException("Article length is more than 4 bytes long number");
 	}
 }

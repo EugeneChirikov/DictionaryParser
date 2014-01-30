@@ -1,11 +1,8 @@
 package com.mates120.dictionaryparser.stardict;
 
 import java.io.IOException;
-import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import android.util.Log;
 
 import com.mates120.dictionaryparser.RawDictionary;
 import com.mates120.dictionaryparser.StarDictWord;
@@ -42,7 +39,7 @@ public class RawStarDictDictionary implements  RawDictionary
 		@Override
 		public String toString()
 		{
-			return super.toString().toLowerCase(Locale.US);
+			return paramName;//super.toString().toLowerCase(Locale.US);
 		}
 	}
 
@@ -87,8 +84,16 @@ public class RawStarDictDictionary implements  RawDictionary
 				obtainWordFromIDX(newWord);
 				Logger.l().PRINT("STARD_PARSER", newWord.getSource());
 				newWord.setSource(escapeQuotes(newWord.getSource()));
-				obtainValueFromDICT(newWord);
-				Logger.l().PRINT("STARD_PARSER", newWord.getValue());
+				try
+				{
+					obtainValueFromDICT(newWord);
+				}
+				catch (Exception e)
+				{
+					Logger.l().PRINT("STARD_PARSER",e.getMessage());
+					Logger.l().PRINT("STARD_PARSER","The word was skipped");					
+					continue;
+				}
 				storage.insertWord(newWord.getSource(), newWord.getValue());
 			}
 //			checkParsedIDX();
