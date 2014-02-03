@@ -2,6 +2,8 @@ package com.mates120.dictionaryparser;
 
 import android.content.Context;
 
+import com.mates120.dictionaryparser.debug.Logger;
+import com.mates120.dictionaryparser.debug.SystemOut;
 import com.mates120.dictionaryparser.stardict.DictFile;
 import com.mates120.dictionaryparser.stardict.IdxFile;
 import com.mates120.dictionaryparser.stardict.IfoFile;
@@ -37,9 +39,18 @@ public class DictionaryParser {
 		{
 			try
 			{
-				IfoFile ifoFile = new IfoFile(filesPath + "/" + DICT_NAME + ".ifo");
-				IdxFile idxFile = new IdxFile(filesPath + "/" + DICT_NAME + ".idx");
-				DictFile dictFile = new DictFile(filesPath + "/" + DICT_NAME + ".dict");
+				FilesFinder filesFinder = new FilesFinder();
+				String ifoPath = filesFinder.getFilePath(filesPath, ".ifo");
+				String idxPath = filesFinder.getFilePath(filesPath, ".idx");
+				String dictPath = filesFinder.getFilePath(filesPath, ".dict");
+				Logger.l().PRINT(filesPath);
+				Logger.l().PRINT(ifoPath);
+				Logger.l().PRINT(idxPath);
+				Logger.l().PRINT(dictPath);
+				
+				IfoFile ifoFile = new IfoFile(ifoPath);
+				IdxFile idxFile = new IdxFile(idxPath);
+				DictFile dictFile = new DictFile(dictPath);
 				rawDict = new RawStarDictDictionary(ifoFile, idxFile, dictFile);
 			}
 			catch (Exception e)
